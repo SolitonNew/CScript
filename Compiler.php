@@ -1,10 +1,9 @@
 <?php
 
 class Compiler {
-    public $_lines = [];
-    public $_byte_lines = [];
-    public $_errors = [];
-    private $_parse_line = 1;
+    public $_lines = []; // распарсеные фрагменты   
+    public $_byte_lines = []; // Фрагменты, переведенные в цыфровые коды
+    public $_errors = []; // Лог ошибок, выдающий компилятором
     
     public $_constants = [];
     public $_variables = [];
@@ -83,6 +82,9 @@ class Compiler {
             if ($is_symb != $prev_is_symb) {
                 if ($part != '') {
                     $parts[] = $part;
+                    if ($this->_checkLastPartAsConstant($parts) == false) {
+                        return ;
+                    }
                 }
                 $part = $c;
             } else {
@@ -93,9 +95,33 @@ class Compiler {
 
         if ($part != '') {
             $parts[] = $part;
+            if ($this->_checkLastPartAsConstant($parts) == false) {
+                return ;
+            }
         }
                
         return $parts;
+    }
+    
+    private function _checkLastPartAsConstant(&$parts) {
+        $digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        
+        $index = count($parts) - 1;
+        $part = $parts[$index];
+        
+        if (!in_array($part[0], $digits)) { // первый символ не цыфра - значит дальше не проверяем
+            return true;
+        }
+        
+        // проверяем константу полностью. Чтобы были все цыфры
+        for($i = 1; $i < strlen($part); $i++) {
+            if (!in_array($part[$i], $digits)) {
+                $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $index).']: Константа может состоять только из цыфр';
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     /**
@@ -135,12 +161,17 @@ class Compiler {
             // $multi_block false означает, что этот блок должен быть однострочным.
         }
         
+        $prev_start = $start;
         $start = $this->_findNextRealPart($parts, $start, $end);
-        if ($start == -1) return $end;
+        if ($start == -1) {
+            $start = $prev_start;
+        }
         
         $p_i = $this->_findNextRealPart($parts, $start, $end);
         if ($p_i != -1 && $parts[$p_i] == '}') {
-            $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $p_i).']: Неожиданно встретился символ "}"';
+            if ($with_begin == false) {
+                $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $p_i).']: Неожиданно встретился символ "}"';
+            }
             return count($parts);
         }
         
@@ -149,7 +180,7 @@ class Compiler {
             $p_i = $this->_findNextRealPart($parts, $i, $end);
             if ($p_i == -1) {
                 if ($with_begin) {
-                    $this->_errors[] = 'ERROR: не найдено "}"';
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $p_i).']: не найдено "}"';
                 }
                 return count($parts);
             }
@@ -291,7 +322,7 @@ class Compiler {
             $this->_copyPartsToLines($parts, $elseIndex, $elseIndex + 1);
             
             // вкидываем начало блока if
-            $this->_lines[] = ['{', 0];            
+            $this->_lines[] = ['{', 0];
             $label = count($this->_lines) - 1;
             
             $elseBlock = $this->_parseBlock($parts, $elseIndex + 1);
@@ -433,13 +464,13 @@ class Compiler {
                 $caseIndex = $i;
                 $i = $this->_findNextRealPart($parts, $i + 1);
                 if ($i == -1 || !in_array($parts[$i][0], $digits)) {
-                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $caseIndex).']: ожидается константа';
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $caseIndex).']: Ожидается константа';
                     return count($parts);
                 }
                 
                 $i = $this->_findNextRealPart($parts, $i + 1);
                 if ($i == -1 || $parts[$i] != ':') {
-                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $caseIndex).']: ожидается ":"';
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $caseIndex).']: Ожидается ":"';
                     return count($parts);
                 }
                 
@@ -452,7 +483,7 @@ class Compiler {
                 $defaultIndex = $i;
                 $i = $this->_findNextRealPart($parts, $i + 1);
                 if ($i == -1 || $parts[$i] != ':') {
-                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $defaultIndex).']: ожидается ":"';
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $defaultIndex).']: Ожидается ":"';
                     return count($parts);
                 }
                 
@@ -466,7 +497,7 @@ class Compiler {
         }
         
         
-        $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $start).']: ожидается "}"';
+        $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $start).']: Ожидается "}"';
         return count($parts);
     }
     
@@ -494,7 +525,7 @@ class Compiler {
             if ($part == '}') {    
                 $in_count--;
                 if ($in_count < 0) { // 
-                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $start).']: неожиданно встретился "}"';
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $start).']: Неожиданно встретился "}"';
                     return count($parts);
                 }
             }
