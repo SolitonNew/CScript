@@ -34,7 +34,7 @@ function run($bytes_str) {
     for($i = $begin; $i < count($commands); $i++) {
         $run_count++;
         if ($run_count >= 10000) {
-            $stream[] = 'Превышен лимит выпоннения инструкций. MAX: '.$run_count;
+            $stream[] = 'Превышен лимит выполнения инструкций. MAX: '.$run_count;
             return ;
         }
         
