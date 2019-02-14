@@ -14,7 +14,7 @@ function run($bytes_str) {
     global $stream;
     global $stack;
     
-    //return ;
+    $run_count = 0;
     
     for($i = 0; $i < strlen($bytes_str); $i += 2) {
         $commands[] = hexdec(substr($bytes_str, $i, 2));
@@ -31,7 +31,14 @@ function run($bytes_str) {
     // 'VAR FUNCTION' => 104,
      */
     
-    for($i = $begin; $i < count($commands); $i++) {        
+    for($i = $begin; $i < count($commands); $i++) {
+        $run_count++;
+        if ($run_count >= 10000) {
+            $stream[] = 'Превышен лимит выпоннения инструкций. MAX: '.$run_count;
+            return ;
+        }
+        
+        
         switch ($commands[$i]) {
             case 5: // '='
                 setValue($i + 1, getValue($i + 3));

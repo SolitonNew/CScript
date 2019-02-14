@@ -7,13 +7,13 @@ class Compiler {
     
     public $_constants = [];
     public $_variables = [];
-    public $_def_functions = [
+    public $_def_functions = [ // стандартные функции
         'print' => 1,
         'abs' => 31,
         'min' => 32,
         'max' => 33,
     ];
-    private $_var_functions = [
+    private $_var_functions = [ // функции управления переменными умного дома
         'VAR_1' => 1,
         'VAR_2' => 2,
         'SHOWER_2_S' => 3,
