@@ -1229,6 +1229,15 @@ class Compiler {
             }
         }
         
+        if (count($args) < 4) {
+            $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $index).']: Ожидается ";"';
+            return count($parts);
+        } else
+        if (count($args) > 4) {
+            $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $index).']: Ожидается ")"';
+            return count($parts);
+        }
+        
         // Байт код инициализации
         $this->_compailExpression($parts, $args[0], $args[1] - 1);
         
