@@ -27,17 +27,30 @@
             max-height: calc(50vh - 40px);
             width: 100%;
         }
+        
+        button {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #000;
+            padding: 5px 25px;
+            cursor: pointer;
+        }
+                
+        button:active {
+            background-color: #333;
+        }
+        
     </style>
 </head>
 <body style="position:relative;padding: 0px;margin:10px;">
     <table style="width:100%;" cellpadding="3">
     <tr>
-        <td class="view-code">
+        <td class="view-code" rowspan="2" style="background-color: #eee;">
             <b>Код:</b><br>
             <form method="POST" style="padding:0px;margin:0px;">
-                <textarea name="source" style="width: calc(100% - 5px);height: calc(50vh - 70px);"><?php echo $source; ?></textarea>
+                <textarea name="source" style="width: calc(100% - 11px);height: calc(100vh - 110px);border: 1px solid #333;padding:5px;"><?php echo $source; ?></textarea>
                 <br>
-                <button>RUN</button>
+                <button><b>RUN</b></button>
             </form>
         </td>
         <td class="view-code">
@@ -94,18 +107,12 @@
                 ?>
             </div>
         </td>
-        <td class="view-code">
-            <div>
-                <b>CONSTANTS: </b><br>
-                <?php echo join(', ', $compiler->_constants) ?><br><br>
-                <b>VARIABLES: </b><br>
-                <?php echo join(', ', $compiler->_variables) ?><br><br>
-                <b>STACK SIZE: </b><br>
-                <?php echo $compiler->_max_stack_size; ?><br><br>
-            </div>
-        </td>
         <td class="view-code" colspan="2">
             <div style="word-break: break-word;">
+                <b>CONSTANTS: </b><?php echo join(', ', $compiler->_constants) ?><br>
+                <b>VARIABLES: </b><?php echo join(', ', $compiler->_variables) ?><br>
+                <b>STACK SIZE: </b><?php echo $compiler->_max_stack_size; ?><br>
+                <br>
                 <b>BYTE CODE [<?php echo (strlen($byte_code) / 2); ?>]:</b><br>
                 <?php 
                     echo $byte_code;
