@@ -175,6 +175,39 @@ class Compiler {
             return count($parts);
         }
         
+        // Обрабатываем коментарии. Заменяем на пробелы
+        for($i = $start; $i < $end; $i++) {
+            $part = $parts[$i];
+            
+            if ($part == '//') { // Начался коментарий
+                $p_i = $this->_findNextPart($parts, $i, "\n");
+                if ($p_i == -1) {
+                    $parts[$i] = ' ';
+                    $i = count($parts);
+                } else {
+                    for ($k = $i; $k < $p_i; $k++) {
+                        $parts[$k] = ' ';
+                    }
+                    $i = $p_i;
+                }
+            } else
+            if ($part == '/*') { // Начался коментарий
+                $p_i = $this->_findNextPart($parts, $i, "*/");
+                if ($p_i == -1) {
+                    for ($k = $i; $k < count($parts); $k++) {
+                        $parts[$k] = ' ';
+                    }
+                    $i = count($parts);
+                } else {
+                    for ($k = $i; $k <= $p_i; $k++) {
+                        $parts[$k] = ' ';
+                    }
+                    $i = $p_i;
+                }
+            }
+        }
+        
+        // обрабатываем блок
         for($i = $start; $i < $end; $i++) {
             // пропускаем пустые фрагменты
             $p_i = $this->_findNextRealPart($parts, $i, $end);
@@ -190,22 +223,6 @@ class Compiler {
             
             $part = $parts[$i];
 
-            if ($part == '//') { // Начался коментарий
-                $p_i = $this->_findNextPart($parts, $i, "\n");
-                if ($p_i == -1) {
-                    $i = count($parts);
-                } else {
-                    $i = $p_i;
-                }
-            } else
-            if ($part == '/*') { // Начался коментарий
-                $p_i = $this->_findNextPart($parts, $i, "*/");
-                if ($p_i == -1) {
-                    $i = count($parts);
-                } else {
-                    $i = $p_i;
-                }
-            } else
             if ($part == '}') {
                 if ($with_begin == false) {
                     $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $i).']: Неожиданно встретился символ "}"';
@@ -493,6 +510,8 @@ class Compiler {
             return count($parts);
         }
         
+        $default_count = 0;
+        
         for($i = $index + 1; $i < count($parts); $i++) {
             $i = $this->_findNextRealPart($parts, $i);
             if ($i == -1) {
@@ -526,6 +545,11 @@ class Compiler {
                 $i = $this->_parseBlockSwitchDetail($parts, $i + 1);
             } else
             if ($part == 'default') {
+                if ($default_count++) {
+                    $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $i).']: Неожиданно встретилась секция "default"';
+                    return count($parts);
+                }
+                
                 $defaultIndex = $i;
                 $i = $this->_findNextRealPart($parts, $i + 1);
                 if ($i == -1 || $parts[$i] != ':') {
