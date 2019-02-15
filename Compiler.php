@@ -282,6 +282,52 @@ class Compiler {
     }
     
     /**
+     * Выполняет поиск закрытой скобки после указанного индекса с подсчетом скобок внутри.
+     * 
+     * @param type $parts
+     * @param type $start
+     * @return type
+     */
+    private function _findArgumentsEnd(&$parts, $start) {
+        $symbols = ['+', '-', '*', '/', '<', '>', '=', '!', '&', '|', '(', ')', ',', ';', ':'];
+        
+        if ($parts[$start] != '(') {
+            return -2;
+        }
+        
+        $var_step = 0;        
+        $in_count = 0;
+        for($i = $start; $i < count($parts); $i++) {
+            $i = $this->_findNextRealPart($parts, $i);
+            
+            if ($parts[$i] == '(') {
+                $in_count++;
+            } else
+            if ($parts[$i] == ')') {
+                $in_count--;
+                if ($in_count == 0) {
+                    return $i + 1;
+                }
+            }
+            
+            // проверяем очередность констант/переменных/функций
+            // подряд две константы/переменные/функции быть не могут. 
+            // Они обязаны быть разделенными символом
+            // Проверяем только по первому символу
+            if (in_array($parts[$i][0], $symbols)) {
+                $var_step = 0;
+            } else {
+                $var_step++;
+            }
+            
+            if ($var_step > 1) {
+                return -1;
+            }            
+        }
+        return -1;
+    }
+        
+    /**
      * 
      * @param type $parts
      * @param type $start
@@ -305,7 +351,7 @@ class Compiler {
             $this->_errors[] = 'ERROR ['.$this->_calcLineNumber($parts, $start).']: ожидается ")"';
             return count($parts);
         }
-        
+                
         // переносим инструкцию if
         $this->_copyPartsToLines($parts, $start, $ifIndex);
         
@@ -571,33 +617,6 @@ class Compiler {
         for ($i = $start; $i < $end; $i++) {
             if ($parts[$i] == $char) {
                 return $i;
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * Выполняет поиск закрытой скобки после указанного индекса с подсчетом скобок внутри.
-     * 
-     * @param type $parts
-     * @param type $start
-     * @return type
-     */
-    private function _findArgumentsEnd(&$parts, $start) {
-        if ($parts[$start] != '(') {
-            return -2;
-        }
-        
-        $in_count = 0;
-        for($i = $start; $i < count($parts); $i++) {
-            if ($parts[$i] == '(') {
-                $in_count++;
-            } else
-            if ($parts[$i] == ')') {
-                $in_count--;
-                if ($in_count == 0) {
-                    return $i + 1;
-                }
             }
         }
         return -1;
@@ -1224,15 +1243,18 @@ class Compiler {
         // Но последнее допишем, когда закнчим обрабатівать вложенній блок
         // Превращаем условный цыкл в условие с блоком и в конец блока 
         // допишем безусловный переход назад на $block_count
-        $goto_exit = count($this->_byte_code);
-        $this->_byte_code[] = [
-            11,
-            $tv,
-            $parts[$expression_index][0],
-            $parts[$expression_index][1],
-            0,
-            0
-        ];
+        $goto_exit = -1;
+        if ($args[2] - $args[1] > 1) { // Выражение задано, а иначе делаем бесконечный цыкл
+            $goto_exit = count($this->_byte_code);
+            $this->_byte_code[] = [
+                11,
+                $tv,
+                $parts[$expression_index][0],
+                $parts[$expression_index][1],
+                0,
+                0
+            ];
+        }
         $start_block = count($this->_byte_code);
         $this->_compailBlock($index, $index + $block_count);
         $index += $block_count - 1;
@@ -1248,7 +1270,9 @@ class Compiler {
         ];
         
         $exit = $this->_calcRealEndAddr();
-        $this->_byte_code[$goto_exit][4] = $exit;
+        if ($goto_exit > -1) { // Это цыкл с заявленым условием
+            $this->_byte_code[$goto_exit][4] = $exit;
+        }
         
         $this->_stack_size = $prev_stack_size;
         
