@@ -14,19 +14,18 @@
 <html>
 <head>
     <style>
-        
         .view-code {
-            vertical-align:top;
-            font-family:monospace;
-            width:20%;
+            vertical-align: top;
+            font-family: monospace;
+            width: 20%;
             padding: 5px;
-            border:1px solid #000;
+            border: 1px solid #000;
         }
         .view-code div {
             overflow: auto;
-            height:280px;
-            max-height: 280px;
-            width:100%;
+            height: calc(50vh - 40px);
+            max-height: calc(50vh - 40px);
+            width: 100%;
         }
     </style>
 </head>
@@ -36,7 +35,7 @@
         <td class="view-code">
             <b>Код:</b><br>
             <form method="POST" style="padding:0px;margin:0px;">
-                <textarea name="source" style="width: calc(100% - 5px);" rows="16"><?php echo $source; ?></textarea>
+                <textarea name="source" style="width: calc(100% - 5px);height: calc(50vh - 70px);"><?php echo $source; ?></textarea>
                 <br>
                 <button>RUN</button>
             </form>
@@ -47,7 +46,7 @@
                 <?php 
                 $i = 0;
                 foreach($compiler->_lines as $line) {
-                    echo $i.'. '.join(', ', $line).'<br>';
+                    echo '<b>'.$i.'.</b> '.join(', ', $line).'<br>';
                     $i++;
                 }
                 ?>
@@ -59,7 +58,7 @@
                 <?php 
                 $i = 0;
                 foreach($compiler->_byte_lines as $line) {
-                    echo $i.'. ';
+                    echo '<b>'.$i.'.</b> ';
                     foreach($line as $part) {
                         echo '['.join(',', $part).']';
                     }
@@ -75,40 +74,45 @@
                 <?php
                     $i = 1;
                     foreach($compiler->_byte_code as $line) {
-                        echo $i.'. '.join(', ', $line).'<br>';
+                        echo '<b>'.$i.'.</b> '.join(', ', $line).'<br>';
                         $i++;
                     }
                 ?>
             </div>
         </td>
     </tr>
-    </table>
-    <div style="word-break: break-word;">
-        <b>CONSTANTS: </b>
-        <?php echo join(', ', $compiler->_constants) ?>&nbsp;&nbsp;&nbsp;&nbsp;
-        <b>VARIABLES: </b>
-        <?php echo join(', ', $compiler->_variables) ?>&nbsp;&nbsp;&nbsp;&nbsp;
-        <b>STACK SIZE: </b>
-        <?php echo $compiler->_max_stack_size; ?>&nbsp;&nbsp;&nbsp;&nbsp;
-        <b>BYTES: </b>
-        <?php echo (strlen($byte_code) / 2); ?>&nbsp;&nbsp;&nbsp;&nbsp;<br>
-        <?php 
-            echo $byte_code;
-        ?>
-    </div>
-    <div style="position:relative;display:inline-block;width:100%;height:360px;background-color:#f00;overflow:hidden;">
-        <div style="position:absolute;width:100%;height:100%;overflow:auto;background-color:#000;color:#0f0;font-family:monospace;">
-            <div style="padding: 10px;">
-            <?php
-                foreach($compiler->_errors as $line) {
-                    echo $line.'<br>';
-                }
-                foreach($stream as $line) {
-                    echo $line.'<br>';
-                }
-            ?>
+    <tr>
+        <td class="view-code" style="background-color:#000;color:#0f0;font-family:monospace;">
+            <div>
+                <?php
+                    foreach($compiler->_errors as $line) {
+                        echo $line.'<br>';
+                    }
+                    foreach($stream as $line) {
+                        echo $line.'<br>';
+                    }
+                ?>
             </div>
-        </div>
-    </div>
+        </td>
+        <td class="view-code">
+            <div>
+                <b>CONSTANTS: </b><br>
+                <?php echo join(', ', $compiler->_constants) ?><br><br>
+                <b>VARIABLES: </b><br>
+                <?php echo join(', ', $compiler->_variables) ?><br><br>
+                <b>STACK SIZE: </b><br>
+                <?php echo $compiler->_max_stack_size; ?><br><br>
+            </div>
+        </td>
+        <td class="view-code" colspan="2">
+            <div style="word-break: break-word;">
+                <b>BYTE CODE [<?php echo (strlen($byte_code) / 2); ?>]:</b><br>
+                <?php 
+                    echo $byte_code;
+                ?>
+            </div>
+        </td>
+    </tr>
+    </table>
 </body>    
 </html>
